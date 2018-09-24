@@ -1,25 +1,73 @@
 package demo.chat.Server;
 
+import Enter.TestTreeSet;
+
+import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.List;
 
-public class ChatServer {
+public class ChatServer extends Frame {
     private boolean started = false;
     private List<ChatThread> chatThreads = new ArrayList<ChatThread>();
+    private TextArea ta = new TextArea();
+    private TextArea ta2 = new TextArea();
+    private TextField tf = new TextField();
+    private DataOutputStream dos = null;
+    private DataInputStream dis = null;
     public static void main(String[] args) {
         new ChatServer().startServer();
     }
     private void startServer(){
+        setLayout(null);
+
+        //系统消息提示框
+        Label lb1 = new Label("--------System Message--------");
+        lb1.setBounds(10, 55, 300 ,20);
+
+        //系统消息提示框
+        ta.setBackground(Color.GRAY);
+        ta.setEditable(false);
+        ta.setBounds(10, 80, 400, 400);
+
+        //当前用户列表
+        Label lb2 = new Label("--------Current User List--------");
+        lb2.setBounds(450, 55, 300, 20);
+
+        //当前用户列表框
+        ta2.setBackground(Color.GRAY);
+        ta2.setEditable(false);
+        ta2.setBounds(450, 80, 200 ,400);
+
+        //添加组件
+        add(lb1);
+        add(lb2);
+        add(ta);
+        add(ta2);
+        setSize(700, 600);
+        setVisible(true);
+        setResizable(false);
+        setTitle("Chat Server");
+
+//        setSize(400,400);
+//        setLocation(400,300);
+//        add(ta, BorderLayout.NORTH);
+//        add(tf, BorderLayout.SOUTH);
+//        pack();
+//        ta.setEditable(false);
+//        setVisible(true);
+
         try {
             //开启服务端Socket
             ServerSocket seso = new ServerSocket(8888);
             started = true;
+            ta.setText("服务器已开启，等待客户端连接");
             while(started){
                 //接受客户端连接请求
-                System.out.println("服务器已开启，等待客户端连接");
                 Socket sos = seso.accept();
-                System.out.println("一个客户端已连接");
                 //开启线程处理客户端通信
                 ChatThread ct = new ChatThread(sos);
                 chatThreads.add(ct);
@@ -56,7 +104,7 @@ public class ChatServer {
                 bConnected = true;
                 while(bConnected){
                     String strMsgIn = din.readUTF();
-                    System.out.println(strMsgIn);
+                    ta.append("\n" + strMsgIn + "\n");
                     //接收到数据后发送给每个客户端
                     for(int i =0;i<chatThreads.size();i++){
                         chatThreads.get(i).send(strMsgIn);
@@ -85,4 +133,3 @@ public class ChatServer {
 
     }
 }
-
