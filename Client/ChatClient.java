@@ -1,5 +1,8 @@
 package demo.chat.Client;
 
+import demo.chat.Server.ChatServer;
+import demo.chat.jdbc.JdbcUtils;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -11,6 +14,11 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ChatClient extends Frame {
     private String clientname = "";
@@ -21,6 +29,7 @@ public class ChatClient extends Frame {
     private Socket socket = null;
     private boolean bConnected = false;
     private Thread thread=null;
+    private List<String> userports = new ArrayList<String>();
 //    public static void main(String[] args) {
 //        new ChatClient().frameClient("Dewily");
 //    }
@@ -55,6 +64,13 @@ public class ChatClient extends Frame {
         //好友列表框
         final Button Bshow = new Button("Show Online");
         Bshow.setBounds(450, 80, 200, 20);
+        Bshow.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+            }
+        });
+
 
         //发送框
         tf.setEditable(true);
@@ -64,6 +80,25 @@ public class ChatClient extends Frame {
         //发送按钮
         final Button Bsend = new Button("Send");
         Bsend.setBounds(450, 500, 150, 20);
+        Bsend.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String str = tf.getText();
+                tf.setText("");
+                try {
+                    if(str!=null && !str.trim().equals("")){
+                        dos.writeUTF(getClientname() +  ">>" + str);
+                        dos.flush();
+                    }
+                    else {
+                        dos.writeUTF("发送信息不能为空");
+                    }
+                } catch (IOException e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                }
+            }
+        });
 
         add(lb1);
         add(lb2);
@@ -75,37 +110,20 @@ public class ChatClient extends Frame {
         setSize(700, 600);
         setVisible(true);
         setResizable(false);
-        setTitle("Chat Client");
+        setTitle(name + "——Chat Client");
         this.connect();
 
         this.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
                 disconnected();
+                setLogout();
                 System.exit(0);
             }
         });
 
-
-//        this.setClientname(name);
-//        setSize(400, 400);
-//        setLocation(400,300);
-//        add(ta,BorderLayout.NORTH);
-//        add(tf,BorderLayout.SOUTH);
-//        pack();
-//        ta.setEditable(false);
-//        tf.addActionListener(new TfListener());
-//        //关闭窗口事件监听
-//        this.addWindowListener(new WindowAdapter() {
-//            @Override
-//            public void windowClosing(WindowEvent e) {
-//                disconnected();
-//                System.exit(0);
-//            }
-//        });
-//        this.connect();
-//        setVisible(true);
     }
+
 
     //链接服务器地址
     private void connect(){
@@ -118,9 +136,11 @@ public class ChatClient extends Frame {
         } catch (UnknownHostException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
+            setLogout();
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
+            setLogout();
         }
     }
     //断开连接
@@ -135,6 +155,21 @@ public class ChatClient extends Frame {
             e1.printStackTrace();
         }
     }
+
+    //登录状态置0
+    private void setLogout(){
+        try {
+            Connection conn = JdbcUtils.getConncetion();
+            PreparedStatement ps = null;
+            String sql = "UPDATE chatuser SET login_status = FALSE WHERE name = ?" ;
+            ps = conn.prepareStatement(sql);
+            ps.setString(1, clientname);
+            ps.execute();
+        } catch (SQLException e1) {
+            e1.printStackTrace();
+        }
+    }
+
     //键盘回车事件
     private class TfListener implements ActionListener {
 
@@ -169,7 +204,7 @@ public class ChatClient extends Frame {
                     ta.setText(taText+msg+"\n");
                 }
             } catch (SocketException e) {
-                System.out.println("退出");;
+                System.out.println("退出");
             } catch (IOException e) {
                 e.printStackTrace();
             }

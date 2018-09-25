@@ -23,6 +23,7 @@ public class LoginFrame extends JFrame{
     private static JPasswordField jtext2;//密码
     private static JLabel jl_admin;
     private static JLabel jl_password;
+
     public LoginFrame (){//初始化登陆界面
         Font font =new Font("黑体", Font.PLAIN, 20);//设置字体
         jf_1=new JFrame("登陆界面");
@@ -50,6 +51,7 @@ public class LoginFrame extends JFrame{
         jtext1.setBounds(150, 50, 250, 50);
         jtext1.setFont(font);
 
+        //密码输入框
         jtext2=new JPasswordField();//密码输入框
         jtext2.setBounds(150, 120, 250, 50);
 
@@ -85,61 +87,57 @@ public class LoginFrame extends JFrame{
                 String admin=jtext1.getText();
                 char[] password=jtext2.getPassword();
                 String str=String.valueOf(password); //将char数组转化为string类型
-
-
                 //连接数据库
                 ResultSet rs = null;
-                try {
-                    Connection conn = JdbcUtils.getConncetion();
-                    PreparedStatement ps = null;
-                    String sql = "select * from chatuser where name=? ";
-                    ps = conn.prepareStatement(sql);
-                    ps.setString(1, admin);
-                    rs = ps.executeQuery();
-                    if(rs!=null) {
-                        rs.next();
-                        if(str.equals(rs.getString("password"))){
-                            System.out.println(admin);
-                            System.out.println(str);
-                            ChatClient chatClient = new ChatClient();
-                            chatClient.frameClient(admin);
-                            //mainLayout ml=new mainLayout();//为跳转的界面
-                            hl.jf_1.dispose();//销毁当前界面
+
+                    try {
+                        Connection conn = JdbcUtils.getConncetion();
+                        PreparedStatement ps = null;
+                        String sql = "select * from chatuser where name=? ";
+                        ps = conn.prepareStatement(sql);
+                        ps.setString(1, admin);
+                        rs = ps.executeQuery();
+                        if(rs!=null) {
+                            rs.next();
+                            if(str.equals(rs.getString("password"))){
+                                System.out.println(admin);
+                                System.out.println(str);
+                                if(rs.getBoolean("login_status") == true){
+                                    JOptionPane.showMessageDialog(hl,"该用户已登录","提示",JOptionPane.WARNING_MESSAGE);
+                                }
+                                else {
+                                    sql = "UPDATE chatuser set login_status = TRUE WHERE name = ?" ;
+                                    ps = conn.prepareStatement(sql);
+                                    ps.setString(1,admin);
+                                    ps.execute();
+                                    ChatClient chatClient = new ChatClient();
+                                    chatClient.frameClient(admin);
+                                    //mainLayout ml=new mainLayout();//为跳转的界面
+                                    hl.jf_1.dispose();//销毁当前界面
+                                }
+                            }
+                            else {
+                                JOptionPane.showMessageDialog(hl,"密码错误，请重新输入","提示",JOptionPane.WARNING_MESSAGE);
+                                jtext2.setText("");
+                            }
+
                         }
 
-                    }
-
-                    else if(rs==null){
-                        JOptionPane.showMessageDialog(hl,"该用户不存在，请先注册","提示",JOptionPane.WARNING_MESSAGE);
-                    }
-
-                    else {
-                        count++;
-                        System.out.println("error");
-                        if(count==3){
-                            hl.jf_1.dispose();
+                        else if(rs==null){
+                            JOptionPane.showMessageDialog(hl,"该用户不存在，请先注册","提示",JOptionPane.WARNING_MESSAGE);
                         }
+
+                        else {
+                            count++;
+                            System.out.println("error");
+                            if(count==3){
+                                hl.jf_1.dispose();
+                            }
+                        }
+                    } catch (SQLException e) {
+                        e.printStackTrace();
                     }
-//                    else if (str.equals(rs.getObject("password"))){
-//
-//                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
                 }
-
-
-
-//                if(admin.equals("root")&&str.equals("123456"))
-//                {
-//
-//                    System.out.println(admin);
-//                    System.out.println(str);
-//                    ChatClient chatClient = new ChatClient();
-//                    chatClient.frameClient();
-//                    //mainLayout ml=new mainLayout();//为跳转的界面
-//                    hl.jf_1.dispose();//销毁当前界面
-//                }
-            }
         };
         bt1.addActionListener(bt1_ls);
         //退出事件的处理

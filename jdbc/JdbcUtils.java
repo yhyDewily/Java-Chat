@@ -4,7 +4,7 @@ import java.sql.*;
 
 public final class JdbcUtils {
     static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
-    static final String DB_URL = "jdbc:mysql://localhost:3306/javaee";
+    static final String DB_URL = "jdbc:mysql://localhost:3306/javaee?useSSL=true";
 
     static final String USER = "root";
     static final String PASS = "fcbarca1899";

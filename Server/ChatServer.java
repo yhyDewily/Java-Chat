@@ -9,19 +9,29 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ChatServer extends Frame {
     private boolean started = false;
     private List<ChatThread> chatThreads = new ArrayList<ChatThread>();
+    private List<String> userports = new ArrayList<String>();
     private TextArea ta = new TextArea();
     private TextArea ta2 = new TextArea();
     private TextField tf = new TextField();
     private DataOutputStream dos = null;
     private DataInputStream dis = null;
+    private static int count = 0;
+
+    public List<String> getUserports() {
+        return userports;
+    }
+
+
     public static void main(String[] args) {
         new ChatServer().startServer();
     }
-    private void startServer(){
+    public void startServer(){
         setLayout(null);
 
         //系统消息提示框
@@ -52,13 +62,6 @@ public class ChatServer extends Frame {
         setResizable(false);
         setTitle("Chat Server");
 
-//        setSize(400,400);
-//        setLocation(400,300);
-//        add(ta, BorderLayout.NORTH);
-//        add(tf, BorderLayout.SOUTH);
-//        pack();
-//        ta.setEditable(false);
-//        setVisible(true);
 
         try {
             //开启服务端Socket
@@ -68,15 +71,42 @@ public class ChatServer extends Frame {
             while(started){
                 //接受客户端连接请求
                 Socket sos = seso.accept();
+                userports.add(String.valueOf(sos.getRemoteSocketAddress()));
+                System.out.println(userports);
                 //开启线程处理客户端通信
+                count++;
+                ta.append("\n"+"当前在线人数："+ count);
+                //显示在线用户
+                if(ta2.getText()==null){
+                    ta2.setText(String.valueOf(sos.getRemoteSocketAddress())+"\n");
+                }
+                else
+                {
+                    ta2.append(String.valueOf(sos.getRemoteSocketAddress())+"\n");
+                }
+                //开启用户线程
                 ChatThread ct = new ChatThread(sos);
                 chatThreads.add(ct);
                 new Thread(ct).start();
+                for(int i =0;i<count;i++){
+                    chatThreads.get(i).send("当前在线人数："+ count+"\n");
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+
+        this.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                System.exit(0);
+            }
+        });
     }
+
+
+    //客户端线程
     private class ChatThread implements Runnable{
         private Socket socket;
         private DataInputStream din=null;
@@ -100,6 +130,7 @@ public class ChatServer extends Frame {
             try{
                 din = new DataInputStream(socket.getInputStream());
                 don = new DataOutputStream(socket.getOutputStream());
+                this.send("当前在线人数："+ count+"\n");
                 //读取数据
                 bConnected = true;
                 while(bConnected){
@@ -114,7 +145,19 @@ public class ChatServer extends Frame {
                 try {
                     //如果客户端出错或关闭，直接关闭连接，并移除List中的当前线程
                     socket.close();
+                    int index = userports.indexOf(String.valueOf(this.socket.getRemoteSocketAddress()));
+                    System.out.println(userports.remove(index));
+                    ta2.setText("");
+                    for(int i=0;i<userports.size();i++){
+                        String user = userports.get(i);
+                        ta2.append(user+"\n");
+                    }
                     chatThreads.remove(this);
+                    count--;
+                    ta.append("\n"+"当前在线人数："+ count);
+                    for(int i =0;i<chatThreads.size();i++){
+                        chatThreads.get(i).send("当前在线人数："+ count+"\n");
+                    }
                 } catch (IOException e1) {
                     // TODO Auto-generated catch block
                     e1.printStackTrace();
