@@ -62,6 +62,8 @@ public class ChatServer extends Frame {
         setResizable(false);
         setTitle("Chat Server");
 
+        //发送消息框
+
 
         try {
             //开启服务端Socket
@@ -88,9 +90,6 @@ public class ChatServer extends Frame {
                 ChatThread ct = new ChatThread(sos);
                 chatThreads.add(ct);
                 new Thread(ct).start();
-                for(int i =0;i<count;i++){
-                    chatThreads.get(i).send("当前在线人数："+ count+"\n");
-                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -144,6 +143,9 @@ public class ChatServer extends Frame {
             }catch (IOException e) {
                 try {
                     //如果客户端出错或关闭，直接关闭连接，并移除List中的当前线程
+                    /*
+                    * 关闭客户端后还需要释放从列表中把在线用户删去
+                    * */
                     socket.close();
                     int index = userports.indexOf(String.valueOf(this.socket.getRemoteSocketAddress()));
                     System.out.println(userports.remove(index));
